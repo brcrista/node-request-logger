@@ -20,15 +20,39 @@ async function logRequest(request) {
   for (let i = 0; i < request.rawHeaders.length; i += 2) {
     console.log(`${request.rawHeaders[i]}: ${request.rawHeaders[i + 1]}`);
   }
-  console.log(await readFromStream(request));
+
+  const body = await readFromStream(request);
+  if (body) {
+    console.log(body);
+  }
+
+  console.log();
 }
 
 const server = http.createServer(async (request, response) => {
   try {
     await logRequest(request);
 
-    response.statusCode = 200;
-    response.end();
+    if (request.method === 'OPTIONS') {
+      // In CORS, the browser will send an OPTIONS request
+      // before the actual request.
+      response.statusCode = 204;
+
+      const accessControlHeaders = [
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers'
+      ];
+
+      for (const header of accessControlHeaders) {
+        response.setHeader(header, '*');
+      }
+
+      response.end();
+    } else {
+      response.statusCode = 200;
+      response.end();
+    }
   } catch (e) {
     console.error(e);
 
